@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- CHANGED: Renamed from InternHub to Skilltern -->
+  <title>Skilltern — Find Your Internship</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* =============================================
+       CSS VARIABLES — one place to control theme
+    ============================================= */
+    :root {
+      --bg:        #f5f3ee;
+      --card-bg:   #ffffff;
+      --ink:       #1a1a2e;
+      --muted:     #7a7a8c;
+      --border:    #e2dfd8;
+      --accent:    #d4541a;   /* burnt-orange accent */
+      --accent2:   #1a6dd4;   /* blue for admin */
+      --tag-bg:    #fef0e8;
+      --tag-color: #d4541a;
+      --radius:    14px;
+      --shadow:    0 2px 16px rgba(0,0,0,0.07);
+    }
+
+    /* =============================================
+       RESET & BASE
+    ============================================= */
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* =============================================
+       NAV BAR
+    ============================================= */
+    nav {
+      background: var(--ink);
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    /* CHANGED: Logo updated to "Skilltern" branding */
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-logo span { color: var(--accent); }
+
+    /* Tab switcher: User / Saved / Applied / Admin */
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .nav-tab {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      padding: 7px 16px;
+      color: rgba(255,255,255,0.65);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .nav-tab:hover:not(.active) {
+      border-color: rgba(255,255,255,0.45);
+      color: #fff;
+    }
+
+    /* =============================================
+       PAGES — only one visible at a time
+    ============================================= */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* =============================================
+       USER PAGE HERO
+    ============================================= */
+    .hero {
+      background: var(--ink);
+      padding: 48px 32px 56px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .hero p {
+      color: rgba(255,255,255,0.55);
+      font-size: 1rem;
+      margin-bottom: 28px;
+    }
+
+    /* =============================================
+       SEARCH + FILTER BAR
+       IMPROVED: Added sort dropdown + clear button
+    ============================================= */
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      max-width: 820px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .search-bar input,
+    .search-bar select {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      padding: 11px 16px;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-bar input { flex: 1 1 220px; }
+    .search-bar select { min-width: 150px; }
+
+    .search-bar input::placeholder { color: rgba(255,255,255,0.4); }
+    .search-bar input:focus,
+    .search-bar select:focus { border-color: var(--accent); }
+
+    .search-bar select option { background: var(--ink); color: #fff; }
+
+    /* NEW: Clear Filters button */
+    .btn-clear {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 10px;
+      padding: 11px 16px;
+      color: rgba(255,255,255,0.8);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-clear:hover {
+      background: rgba(255,255,255,0.22);
+      color: #fff;
+    }
+
+    /* =============================================
+       MAIN CONTENT AREA
+    ============================================= */
+    .content {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 36px 24px 60px;
+    }
+
+    /* Section heading row (title + count) */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .section-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+    }
+
+    /* Small badge showing count */
+    .count-badge {
+      background: var(--tag-bg);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* =============================================
+       INTERNSHIP CARDS GRID
+    ============================================= */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 20px;
+    }
+
+    /* Single internship card */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fadeUp 0.3s ease both;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.11);
+    }
+
+    /* Stagger card entrance animation */
+    .card:nth-child(1) { animation-delay: 0.00s; }
+    .card:nth-child(2) { animation-delay: 0.05s; }
+    .card:nth-child(3) { animation-delay: 0.10s; }
+    .card:nth-child(4) { animation-delay: 0.15s; }
+    .card:nth-child(5) { animation-delay: 0.20s; }
+    .card:nth-child(6) { animation-delay: 0.25s; }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(14px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* NEW: Card header row holds logo + bookmark button */
+    .card-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    /* Company logo placeholder circle */
+    .card-logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: var(--tag-bg);
+      color: var(--accent);
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* NEW: Bookmark/Save button — top-right of card */
+    .btn-save {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.2s;
+      line-height: 1;
+    }
+
+    .btn-save:hover {
+      background: var(--tag-bg);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* When the internship is saved, highlight the button */
+    .btn-save.saved {
+      background: var(--tag-bg);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .card-company {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    /* Small info pills: location, stipend */
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 18px;
+    }
+
+    .tag {
+      background: var(--tag-bg);
+      color: var(--tag-color);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.78rem;
+      font-weight: 500;
+    }
+
+    .tag.blue {
+      background: #e8f0fe;
+      color: var(--accent2);
+    }
+
+    /* Spacer pushes apply button to bottom of card */
+    .card-spacer { flex: 1; }
+
+    /* Apply button on the card */
+    .btn-apply {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn-apply:hover   { opacity: 0.88; }
+    .btn-apply:active  { transform: scale(0.97); }
+
+    /* Applied state — green */
+    .btn-apply.applied {
+      background: #1aaa6d;
+      cursor: default;
+    }
+
+    /* =============================================
+       EMPTY STATE
+    ============================================= */
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 56px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state .icon { font-size: 2.8rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 1rem; }
+
+    /* =============================================
+       NEW: SAVED & APPLIED PAGES
+       These pages share the same layout as the user page
+    ============================================= */
+    .inner-hero {
+      background: var(--ink);
+      padding: 36px 32px 44px;
+      text-align: center;
+    }
+
+    .inner-hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .inner-hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .inner-hero p {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.95rem;
+    }
+
+    /* =============================================
+       ADMIN PAGE
+    ============================================= */
+    .admin-header {
+      background: var(--ink);
+      padding: 40px 32px;
+    }
+
+    .admin-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .admin-header h1 span { color: var(--accent2); }
+    .admin-header p { color: rgba(255,255,255,0.5); margin-top: 6px; }
+
+    /* Admin content wrapper — two columns on wide screens */
+    .admin-content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 36px 24px 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .admin-content { grid-template-columns: 1fr; }
+    }
+
+    /* =============================================
+       ADMIN FORM CARD
+    ============================================= */
+    .form-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .form-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+    }
+
+    /* Each label + input pair */
+    .field { margin-bottom: 14px; }
+
+    .field label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 13px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus,
+    .field select:focus { border-color: var(--accent2); }
+    .field input::placeholder { color: #bbb; }
+
+    /* Admin submit button */
+    .btn-submit {
+      width: 100%;
+      background: var(--accent2);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .btn-submit:hover { opacity: 0.87; }
+
+    /* =============================================
+       ADMIN — LIST OF CURRENT INTERNSHIPS
+    ============================================= */
+    .admin-list-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .admin-list-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+    }
+
+    /* Each row in the admin list */
+    .admin-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 10px;
+      animation: fadeUp 0.2s ease both;
+    }
+
+    .admin-item:last-child { border-bottom: none; }
+
+    .admin-item-info { flex: 1; }
+
+    .admin-item-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .admin-item-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    /* Delete button in admin list */
+    .btn-del {
+      background: #fff0ee;
+      color: #c0392b;
+      border: 1px solid #fad5d0;
+      border-radius: 7px;
+      padding: 5px 12px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+
+    .btn-del:hover { background: #fad5d0; }
+
+    /* =============================================
+       TOAST NOTIFICATION
+    ============================================= */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--ink);
+      color: #fff;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* =============================================
+       RESPONSIVE TWEAKS
+    ============================================= */
+    @media (max-width: 600px) {
+      nav { padding: 0 12px; height: auto; flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+      .nav-tabs { gap: 4px; }
+      .nav-tab { padding: 6px 10px; font-size: 0.8rem; }
+      .hero { padding: 36px 16px 44px; }
+      .content { padding: 24px 16px 48px; }
+      .inner-hero { padding: 28px 16px 36px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================
+       NAV BAR — CHANGED: logo + 4 tabs now
+  ============================================= -->
+  <nav>
+    <!-- CHANGED: "InternHub" renamed to "Skilltern" -->
+    <div class="nav-logo">Skill<span>tern</span></div>
+
+    <div class="nav-tabs">
+      <!-- IMPROVED: 4 tabs — user, saved, applied, admin -->
+      <button class="nav-tab active" onclick="showPage('user')">🎓 Browse</button>
+      <!-- NEW: Saved tab -->
+      <button class="nav-tab" onclick="showPage('saved')">🔖 Saved</button>
+      <!-- NEW: Applied tab -->
+      <button class="nav-tab" onclick="showPage('applied')">✅ Applied</button>
+      <button class="nav-tab" onclick="showPage('admin')">⚙️ Admin</button>
+    </div>
+  </nav>
+
+
+  <!-- ============================================
+       USER BROWSE PAGE
+  ============================================= -->
+  <div id="page-user" class="page active">
+
+    <!-- Hero section with search -->
+    <div class="hero">
+      <!-- CHANGED: Updated heading to mention Skilltern -->
+      <h1>Find Your Next<br/><em>Internship</em></h1>
+      <p>Explore opportunities from top companies — powered by Skilltern.</p>
+
+      <div class="search-bar">
+        <!-- IMPROVED: Placeholder now says "title or company" (search covers both) -->
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="🔍  Search by title or company..."
+          oninput="liveSearch()"
+        />
+
+        <select id="filterLocation" onchange="liveSearch()">
+          <option value="">All Locations</option>
+        </select>
+
+        <select id="filterRole" onchange="liveSearch()">
+          <option value="">All Roles</option>
+        </select>
+
+        <!-- NEW: Sort dropdown -->
+        <select id="sortOrder" onchange="liveSearch()">
+          <option value="latest">🕐 Latest</option>
+          <option value="stipend-high">💰 Stipend: High → Low</option>
+          <option value="stipend-low">💰 Stipend: Low → High</option>
+        </select>
+
+        <!-- NEW: Clear Filters button -->
+        <button class="btn-clear" onclick="clearFilters()">✕ Clear</button>
+      </div>
+    </div>
+
+    <!-- Cards section -->
+    <div class="content">
+      <div class="section-header">
+        <h2>Open Internships</h2>
+        <span class="count-badge" id="resultCount">0 found</span>
+      </div>
+      <div class="cards-grid" id="cardsGrid"></div>
+    </div>
+
+  </div><!-- end #page-user -->
+
+
+  <!-- ============================================
+       NEW: SAVED INTERNSHIPS PAGE
+  ============================================= -->
+  <div id="page-saved" class="page">
+
+    <div class="inner-hero">
+      <h1>🔖 <em>Saved</em> Internships</h1>
+      <p>Internships you've bookmarked for later.</p>
+    </div>
+
+    <div class="content">
+      <div class="section-header">
+        <h2>Your Bookmarks</h2>
+        <span class="count-badge" id="savedCount">0 saved</span>
+      </div>
+      <!-- Saved cards are injected here by renderSaved() -->
+      <div class="cards-grid" id="savedGrid"></div>
+    </div>
+
+  </div><!-- end #page-saved -->
+
+
+  <!-- ============================================
+       NEW: APPLIED INTERNSHIPS PAGE
+  ============================================= -->
+  <div id="page-applied" class="page">
+
+    <div class="inner-hero">
+      <h1>✅ <em>Applied</em> Internships</h1>
+      <p>Track the internships you've already applied to.</p>
+    </div>
+
+    <div class="content">
+      <div class="section-header">
+        <h2>Your Applications</h2>
+        <span class="count-badge" id="appliedCount">0 applied</span>
+      </div>
+      <!-- Applied cards are injected here by renderApplied() -->
+      <div class="cards-grid" id="appliedGrid"></div>
+    </div>
+
+  </div><!-- end #page-applied -->
+
+
+  <!-- ============================================
+       ADMIN PAGE — unchanged structure, same CSS
+  ============================================= -->
+  <div id="page-admin" class="page">
+
+    <div class="admin-header">
+      <h1>Admin <span>Panel</span></h1>
+      <p>Add or remove internship listings.</p>
+    </div>
+
+    <div class="admin-content">
+
+      <div class="form-card">
+        <h2>➕ Add Internship</h2>
+
+        <div class="field">
+          <label>Job Title</label>
+          <input type="text" id="newTitle" placeholder="e.g. Frontend Developer Intern"/>
+        </div>
+        <div class="field">
+          <label>Company Name</label>
+          <input type="text" id="newCompany" placeholder="e.g. TechCorp Pvt Ltd"/>
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <input type="text" id="newLocation" placeholder="e.g. Bengaluru / Remote"/>
+        </div>
+        <div class="field">
+          <label>Monthly Stipend (₹)</label>
+          <input type="number" id="newStipend" placeholder="e.g. 10000" min="0"/>
+        </div>
+        <div class="field">
+          <label>Role / Category</label>
+          <input type="text" id="newRole" placeholder="e.g. Development, Design, Marketing"/>
+        </div>
+
+        <button class="btn-submit" onclick="addInternship()">Post Internship</button>
+      </div>
+
+      <div class="admin-list-card">
+        <h2>📋 Current Listings</h2>
+        <div id="adminList"></div>
+      </div>
+
+    </div>
+
+  </div><!-- end #page-admin -->
+
+
+  <!-- Toast message popup -->
+  <div class="toast" id="toast"></div>
+
+
+  <!-- ============================================
+       JAVASCRIPT — ALL LOGIC
+  ============================================= -->
+  <script>
+
+    /* ================================================
+       DATA MODEL
+       Each internship object:
+       {
+         id       : unique number (Date.now())
+         title    : string
+         company  : string
+         location : string
+         stipend  : number
+         role     : string
+       }
+
+       New localStorage keys added:
+       "savedIds"   — array of IDs the user bookmarked
+       (appliedIds was already here, now shown in its own tab)
+    ================================================ */
+
+    var seedData = [
+      { id:1, title:"Frontend Developer Intern",  company:"Zomato",          location:"Remote",     stipend:15000, role:"Development" },
+      { id:2, title:"UI/UX Design Intern",         company:"Swiggy",          location:"Bengaluru",  stipend:12000, role:"Design"       },
+      { id:3, title:"Data Analyst Intern",         company:"Paytm",           location:"Noida",      stipend:18000, role:"Data"         },
+      { id:4, title:"Marketing Intern",            company:"Nykaa",           location:"Mumbai",     stipend:8000,  role:"Marketing"    },
+      { id:5, title:"Backend Developer Intern",    company:"Razorpay",        location:"Bengaluru",  stipend:20000, role:"Development"  },
+      { id:6, title:"Content Writing Intern",      company:"Times Internet",  location:"Delhi",      stipend:7000,  role:"Content"      },
+      { id:7, title:"Android Developer Intern",    company:"PhonePe",         location:"Hyderabad",  stipend:16000, role:"Development"  },
+      { id:8, title:"HR Intern",                   company:"Infosys BPM",     location:"Chennai",    stipend:9000,  role:"HR"           },
+    ];
+
+    // Load from localStorage (or use seed data on first visit)
+    var internships = JSON.parse(localStorage.getItem("internships")) || seedData;
+
+    // Existing: which internships the user has applied to (array of IDs)
+    var appliedIds  = JSON.parse(localStorage.getItem("appliedIds")) || [];
+
+    // NEW: which internships the user has bookmarked/saved (array of IDs)
+    var savedIds    = JSON.parse(localStorage.getItem("savedIds"))   || [];
+
+
+    /* ================================================
+       SAVE FUNCTIONS — persist data after every change
+    ================================================ */
+    function saveInternships() {
+      localStorage.setItem("internships", JSON.stringify(internships));
+    }
+
+    function saveApplied() {
+      localStorage.setItem("appliedIds", JSON.stringify(appliedIds));
+    }
+
+    // NEW: persist savedIds to localStorage
+    function saveSaved() {
+      localStorage.setItem("savedIds", JSON.stringify(savedIds));
+    }
+
+
+    /* ================================================
+       showPage(name)
+       Switches between pages: user / saved / applied / admin
+       MODIFIED: Now handles 4 tabs instead of 2.
+    ================================================ */
+    function showPage(name) {
+      // Hide all pages
+      document.querySelectorAll(".page").forEach(function(p) {
+        p.classList.remove("active");
+      });
+
+      // Show the chosen page
+      document.getElementById("page-" + name).classList.add("active");
+
+      // Update nav tab highlight
+      document.querySelectorAll(".nav-tab").forEach(function(btn) {
+        btn.classList.remove("active");
+      });
+
+      // Map page name to its tab index (0=browse, 1=saved, 2=applied, 3=admin)
+      var tabMap = { user: 0, saved: 1, applied: 2, admin: 3 };
+      var tabs   = document.querySelectorAll(".nav-tab");
+      if (tabMap[name] !== undefined) tabs[tabMap[name]].classList.add("active");
+
+      // Render the correct content when switching tabs
+      if (name === "admin")   renderAdminList();
+      if (name === "saved")   renderSaved();    // NEW
+      if (name === "applied") renderApplied();  // NEW
+    }
+
+
+    /* ================================================
+       addInternship() — unchanged from original
+       Reads admin form, validates, pushes to array, saves.
+    ================================================ */
+    function addInternship() {
+      var title    = document.getElementById("newTitle").value.trim();
+      var company  = document.getElementById("newCompany").value.trim();
+      var location = document.getElementById("newLocation").value.trim();
+      var stipend  = parseInt(document.getElementById("newStipend").value);
+      var role     = document.getElementById("newRole").value.trim();
+
+      if (!title || !company || !location || !stipend || !role) {
+        showToast("⚠️ Please fill in all fields.");
+        return;
+      }
+
+      var newItem = {
+        id       : Date.now(),
+        title    : title,
+        company  : company,
+        location : location,
+        stipend  : stipend,
+        role     : role
+      };
+
+      internships.unshift(newItem);
+      saveInternships();
+
+      document.getElementById("newTitle").value    = "";
+      document.getElementById("newCompany").value  = "";
+      document.getElementById("newLocation").value = "";
+      document.getElementById("newStipend").value  = "";
+      document.getElementById("newRole").value     = "";
+
+      renderAdminList();
+      populateFilters();
+
+      showToast("✅ Internship posted successfully!");
+    }
+
+
+    /* ================================================
+       deleteInternship(id) — unchanged from original
+       Also cleans up savedIds when deleting.
+    ================================================ */
+    function deleteInternship(id) {
+      internships = internships.filter(function(item) { return item.id !== id; });
+      appliedIds  = appliedIds.filter(function(aid)   { return aid !== id; });
+
+      // NEW: also remove from savedIds if it was bookmarked
+      savedIds    = savedIds.filter(function(sid)     { return sid !== id; });
+
+      saveInternships();
+      saveApplied();
+      saveSaved(); // NEW
+
+      renderAdminList();
+      liveSearch();
+
+      showToast("🗑️ Internship removed.");
+    }
+
+
+    /* ================================================
+       applyToInternship(id) — unchanged logic
+       Marks ID as applied, saves, refreshes button state.
+    ================================================ */
+    function applyToInternship(id) {
+      if (appliedIds.includes(id)) return;
+
+      appliedIds.push(id);
+      saveApplied();
+
+      // Update the button on the card without a full re-render
+      var btn = document.querySelector('[data-apply-id="' + id + '"]');
+      if (btn) {
+        btn.textContent = "✓ Applied";
+        btn.classList.add("applied");
+        btn.disabled = true;
+      }
+
+      showToast("🎉 Application submitted!");
+    }
+
+
+    /* ================================================
+       NEW: toggleSave(id)
+       Bookmarks or un-bookmarks an internship.
+       - If id is NOT in savedIds → add it (save)
+       - If id IS in savedIds    → remove it (unsave)
+       Then saves to localStorage and updates the button.
+    ================================================ */
+    function toggleSave(id) {
+      var alreadySaved = savedIds.includes(id);
+
+      if (alreadySaved) {
+        // Remove from saved list
+        savedIds = savedIds.filter(function(sid) { return sid !== id; });
+        showToast("🔖 Removed from saved.");
+      } else {
+        // Add to saved list
+        savedIds.push(id);
+        showToast("🔖 Internship saved!");
+      }
+
+      // Persist the updated savedIds array
+      saveSaved();
+
+      // Update the bookmark button icon on the card (no full re-render needed)
+      var btn = document.querySelector('[data-save-id="' + id + '"]');
+      if (btn) {
+        if (savedIds.includes(id)) {
+          btn.textContent = "🔖";
+          btn.classList.add("saved");
+          btn.title = "Remove bookmark";
+        } else {
+          btn.textContent = "🤍";
+          btn.classList.remove("saved");
+          btn.title = "Save internship";
+        }
+      }
+    }
+
+
+    /* ================================================
+       populateFilters() — unchanged from original
+       Fills location & role <select> dropdowns.
+    ================================================ */
+    function populateFilters() {
+      var locations = [];
+      var roles     = [];
+
+      internships.forEach(function(item) {
+        if (!locations.includes(item.location)) locations.push(item.location);
+        if (!roles.includes(item.role))         roles.push(item.role);
+      });
+
+      function buildSelect(selectId, values, label) {
+        var select     = document.getElementById(selectId);
+        var currentVal = select.value;
+        select.innerHTML = '<option value="">All ' + label + '</option>';
+        values.sort().forEach(function(val) {
+          var option = document.createElement("option");
+          option.value = val;
+          option.textContent = val;
+          select.appendChild(option);
+        });
+        if (values.includes(currentVal)) select.value = currentVal;
+      }
+
+      buildSelect("filterLocation", locations, "Locations");
+      buildSelect("filterRole",     roles,     "Roles");
+    }
+
+
+    /* ================================================
+       NEW: clearFilters()
+       Resets search input + all dropdowns to default,
+       then re-runs liveSearch() to show all results.
+    ================================================ */
+    function clearFilters() {
+      document.getElementById("searchInput").value   = "";
+      document.getElementById("filterLocation").value = "";
+      document.getElementById("filterRole").value     = "";
+      document.getElementById("sortOrder").value      = "latest";
+      liveSearch();
+      showToast("🔄 Filters cleared.");
+    }
+
+
+    /* ================================================
+       MODIFIED: liveSearch()
+       Original: searched title + location + role filters.
+       CHANGES:
+         1. Search now checks BOTH title AND company name.
+         2. Results are sorted based on the new sort dropdown.
+    ================================================ */
+    function liveSearch() {
+      var searchText     = document.getElementById("searchInput").value.toLowerCase().trim();
+      var filterLocation = document.getElementById("filterLocation").value;
+      var filterRole     = document.getElementById("filterRole").value;
+      var sortOrder      = document.getElementById("sortOrder").value; // NEW
+
+      // Step 1: Filter the internships
+      var results = internships.filter(function(item) {
+        // IMPROVED: match against both title AND company name
+        var titleMatch   = item.title.toLowerCase().includes(searchText);
+        var companyMatch = item.company.toLowerCase().includes(searchText); // NEW
+        var searchMatch  = titleMatch || companyMatch; // either can match
+
+        var locationMatch = filterLocation === "" || item.location === filterLocation;
+        var roleMatch     = filterRole     === "" || item.role     === filterRole;
+
+        return searchMatch && locationMatch && roleMatch;
+      });
+
+      // Step 2: Sort the filtered results
+      // NEW: sorting logic based on selected sort option
+      if (sortOrder === "stipend-high") {
+        // Sort descending by stipend (highest first)
+        results.sort(function(a, b) { return b.stipend - a.stipend; });
+      } else if (sortOrder === "stipend-low") {
+        // Sort ascending by stipend (lowest first)
+        results.sort(function(a, b) { return a.stipend - b.stipend; });
+      }
+      // "latest" keeps the existing order (unshift puts newest at index 0)
+
+      renderInternships(results);
+    }
+
+
+    /* ================================================
+       MODIFIED: renderInternships(list)
+       Original: built apply button only.
+       CHANGES: Added bookmark (Save) button to each card.
+    ================================================ */
+    function renderInternships(list) {
+      var grid = document.getElementById("cardsGrid");
+
+      document.getElementById("resultCount").textContent = list.length + " found";
+
+      if (list.length === 0) {
+        grid.innerHTML =
+          '<div class="empty-state">' +
+          '  <div class="icon">🔎</div>' +
+          '  <p>No internships match your search. Try different filters or <a href="#" onclick="clearFilters()" style="color:var(--accent)">clear filters</a>.</p>' +
+          '</div>';
+        return;
+      }
+
+      var html = "";
+
+      list.forEach(function(item) {
+        var isApplied  = appliedIds.includes(item.id);
+        var isSaved    = savedIds.includes(item.id);  // NEW
+        var btnText    = isApplied ? "✓ Applied"  : "Apply Now";
+        var btnClass   = isApplied ? "btn-apply applied" : "btn-apply";
+        var btnDisable = isApplied ? "disabled" : "";
+        var saveIcon   = isSaved ? "🔖" : "🤍";         // NEW
+        var saveClass  = isSaved ? "btn-save saved" : "btn-save"; // NEW
+        var saveTitle  = isSaved ? "Remove bookmark" : "Save internship"; // NEW
+        var logoLetter = item.company.charAt(0).toUpperCase();
+        var stipendFmt = "₹" + item.stipend.toLocaleString("en-IN") + " / mo";
+
+        html +=
+          '<div class="card">' +
+
+          // NEW: Card header row with logo + bookmark button side by side
+          '  <div class="card-header-row">' +
+          '    <div class="card-logo">' + logoLetter + '</div>' +
+          '    <button class="' + saveClass + '" ' +
+          '      data-save-id="' + item.id + '" ' +   // NEW: data attribute for DOM targeting
+          '      title="' + saveTitle + '" ' +
+          '      onclick="toggleSave(' + item.id + ')">' + saveIcon +
+          '    </button>' +
+          '  </div>' +
+
+          '  <div class="card-title">'   + escapeHTML(item.title)   + '</div>' +
+          '  <div class="card-company">' + escapeHTML(item.company) + '</div>' +
+          '  <div class="card-tags">' +
+          '    <span class="tag">📍 '    + escapeHTML(item.location) + '</span>' +
+          '    <span class="tag blue">💼 ' + escapeHTML(item.role)  + '</span>' +
+          '    <span class="tag">💰 '    + stipendFmt                + '</span>' +
+          '  </div>' +
+
+          // Spacer pushes button to bottom
+          '  <div class="card-spacer"></div>' +
+
+          '  <button class="' + btnClass + '" ' + btnDisable + ' ' +
+          '    data-apply-id="' + item.id + '" ' +  // CHANGED: renamed data attr for clarity
+          '    onclick="applyToInternship(' + item.id + ')">' +
+          btnText +
+          '  </button>' +
+
+          '</div>';
+      });
+
+      grid.innerHTML = html;
+    }
+
+
+    /* ================================================
+       NEW: renderSaved()
+       Reads savedIds, finds matching internship objects,
+       and renders them in the Saved page grid.
+    ================================================ */
+    function renderSaved() {
+      var grid = document.getElementById("savedGrid");
+
+      // Find the full internship objects for each saved ID
+      var savedList = internships.filter(function(item) {
+        return savedIds.includes(item.id);
+      });
+
+      // Update the count badge
+      document.getElementById("savedCount").textContent = savedList.length + " saved";
+
+      if (savedList.length === 0) {
+        grid.innerHTML =
+          '<div class="empty-state">' +
+          '  <div class="icon">🔖</div>' +
+          '  <p>No saved internships yet. Click the 🤍 on any card to bookmark it.</p>' +
+          '</div>';
+        return;
+      }
+
+      // Render cards — same format, bookmark button shows as filled
+      var html = "";
+
+      savedList.forEach(function(item) {
+        var isApplied  = appliedIds.includes(item.id);
+        var btnText    = isApplied ? "✓ Applied" : "Apply Now";
+        var btnClass   = isApplied ? "btn-apply applied" : "btn-apply";
+        var btnDisable = isApplied ? "disabled" : "";
+        var logoLetter = item.company.charAt(0).toUpperCase();
+        var stipendFmt = "₹" + item.stipend.toLocaleString("en-IN") + " / mo";
+
+        html +=
+          '<div class="card">' +
+          '  <div class="card-header-row">' +
+          '    <div class="card-logo">' + logoLetter + '</div>' +
+          // Bookmark always filled (🔖) on saved page; clicking removes it
+          '    <button class="btn-save saved" ' +
+          '      data-save-id="' + item.id + '" ' +
+          '      title="Remove bookmark" ' +
+          '      onclick="toggleSave(' + item.id + '); renderSaved();">' +
+          '      🔖' +
+          '    </button>' +
+          '  </div>' +
+          '  <div class="card-title">'    + escapeHTML(item.title)   + '</div>' +
+          '  <div class="card-company">'  + escapeHTML(item.company) + '</div>' +
+          '  <div class="card-tags">' +
+          '    <span class="tag">📍 '     + escapeHTML(item.location) + '</span>' +
+          '    <span class="tag blue">💼 ' + escapeHTML(item.role)   + '</span>' +
+          '    <span class="tag">💰 '     + stipendFmt                + '</span>' +
+          '  </div>' +
+          '  <div class="card-spacer"></div>' +
+          '  <button class="' + btnClass + '" ' + btnDisable + ' ' +
+          '    data-apply-id="' + item.id + '" ' +
+          '    onclick="applyToInternship(' + item.id + ')">' +
+          btnText +
+          '  </button>' +
+          '</div>';
+      });
+
+      grid.innerHTML = html;
+    }
+
+
+    /* ================================================
+       NEW: renderApplied()
+       Reads appliedIds, finds matching internship objects,
+       and renders them in the Applied page grid.
+       Cards show the green "✓ Applied" state by default.
+    ================================================ */
+    function renderApplied() {
+      var grid = document.getElementById("appliedGrid");
+
+      // Find full internship objects for each applied ID
+      var appliedList = internships.filter(function(item) {
+        return appliedIds.includes(item.id);
+      });
+
+      // Update count badge
+      document.getElementById("appliedCount").textContent = appliedList.length + " applied";
+
+      if (appliedList.length === 0) {
+        grid.innerHTML =
+          '<div class="empty-state">' +
+          '  <div class="icon">📭</div>' +
+          '  <p>You haven\'t applied to any internships yet. Go browse and apply!</p>' +
+          '</div>';
+        return;
+      }
+
+      var html = "";
+
+      appliedList.forEach(function(item) {
+        var isSaved    = savedIds.includes(item.id);
+        var saveIcon   = isSaved ? "🔖" : "🤍";
+        var saveClass  = isSaved ? "btn-save saved" : "btn-save";
+        var logoLetter = item.company.charAt(0).toUpperCase();
+        var stipendFmt = "₹" + item.stipend.toLocaleString("en-IN") + " / mo";
+
+        html +=
+          '<div class="card">' +
+          '  <div class="card-header-row">' +
+          '    <div class="card-logo">' + logoLetter + '</div>' +
+          '    <button class="' + saveClass + '" ' +
+          '      data-save-id="' + item.id + '" ' +
+          '      title="Save internship" ' +
+          '      onclick="toggleSave(' + item.id + '); renderApplied();">' +
+          saveIcon +
+          '    </button>' +
+          '  </div>' +
+          '  <div class="card-title">'    + escapeHTML(item.title)   + '</div>' +
+          '  <div class="card-company">'  + escapeHTML(item.company) + '</div>' +
+          '  <div class="card-tags">' +
+          '    <span class="tag">📍 '     + escapeHTML(item.location) + '</span>' +
+          '    <span class="tag blue">💼 ' + escapeHTML(item.role)   + '</span>' +
+          '    <span class="tag">💰 '     + stipendFmt                + '</span>' +
+          '  </div>' +
+          '  <div class="card-spacer"></div>' +
+          // Applied cards always show the green Applied state
+          '  <button class="btn-apply applied" disabled>✓ Applied</button>' +
+          '</div>';
+      });
+
+      grid.innerHTML = html;
+    }
+
+
+    /* ================================================
+       renderAdminList() — unchanged from original
+    ================================================ */
+    function renderAdminList() {
+      var listEl = document.getElementById("adminList");
+
+      if (internships.length === 0) {
+        listEl.innerHTML = '<p style="color:var(--muted);font-size:0.9rem">No internships posted yet.</p>';
+        return;
+      }
+
+      var html = "";
+
+      internships.forEach(function(item) {
+        html +=
+          '<div class="admin-item">' +
+          '  <div class="admin-item-info">' +
+          '    <div class="admin-item-title">' + escapeHTML(item.title)   + '</div>' +
+          '    <div class="admin-item-sub">'   + escapeHTML(item.company) + ' · ' + escapeHTML(item.location) + '</div>' +
+          '  </div>' +
+          '  <button class="btn-del" onclick="deleteInternship(' + item.id + ')">Delete</button>' +
+          '</div>';
+      });
+
+      listEl.innerHTML = html;
+    }
+
+
+    /* ================================================
+       HELPERS — unchanged from original
+    ================================================ */
+    function escapeHTML(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showToast(message) {
+      var toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(function() { toast.classList.remove("show"); }, 2200);
+    }
+
+
+    /* ================================================
+       INITIALISE — runs once on page load
+    ================================================ */
+    populateFilters();  // fill location & role dropdowns
+    liveSearch();       // render all cards
+
+  </script>
+</body>
+</html>
